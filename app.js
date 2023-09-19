@@ -107,12 +107,37 @@ const banSchema = new mongoose.Schema({
 
 const Ban = mongoose.model('Ban', banSchema);
 
-// Create a new route for the /ban endpoint
+app.get('/check-ban/:user', authenticate, async (req, res) => {
+  const userId = req.params.user;
+
+  try {
+    const banRecord = await Ban.findOne({ userId });
+
+    if (!banRecord) {
+      return res.json({ banned: false });
+    }
+
+    const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+
+    if (banRecord.unbanTime.getTime() > currentTimeInSeconds) {
+      const remainingBanTimeInSeconds = banRecord.unbanTime.getTime() - currentTimeInSeconds;
+
+      return res.json({ banned: true, remainingBanTimeInSeconds });
+    }
+
+    return res.json({ banned: false });
+  } catch (error) {
+    console.error('Error checking ban status:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+
 app.post('/ban', authenticate, async (req, res) => {
   try {
     const { userId, banTime, unbanTime } = req.body;
 
-    // Create a new ban document and save it to the database
+
     const newBan = new Ban({
       userId,
       banTime: new Date(banTime),
