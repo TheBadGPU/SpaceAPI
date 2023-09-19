@@ -89,6 +89,44 @@ mongoose.connect(mongoURI, {
 
   const RobloxUser = mongoose.model('TOSPlayer', userSchema);
 
+
+const banSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true,
+  },
+  banTime: {
+    type: Date,
+    required: true,
+  },
+  unbanTime: {
+    type: Date,
+    required: true,
+  },
+});
+
+const Ban = mongoose.model('Ban', banSchema);
+
+// Create a new route for the /ban endpoint
+app.post('/ban', authenticate, async (req, res) => {
+  try {
+    const { userId, banTime, unbanTime } = req.body;
+
+    // Create a new ban document and save it to the database
+    const newBan = new Ban({
+      userId,
+      banTime: new Date(banTime),
+      unbanTime: new Date(unbanTime),
+    });
+
+    await newBan.save();
+    return res.status(201).json({ message: 'User banned successfully.' });
+  } catch (error) {
+    console.error('Error banning user:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // Create API routes
 app.get('/users', authenticate, async (req, res) => {
   try {
